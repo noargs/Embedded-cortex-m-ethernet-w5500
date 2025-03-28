@@ -34,9 +34,10 @@ Similar to driver update as shown above, we have to download and run [STSW-LINK0
     
 - 80MHz clock speed    
 - Support SPI Mode 0 (also support SPI Mode 3 however Mode 0 is most common)    
-- In addition to SPI lines (MOSI, MISO, SCK), We need two additional IO lines, *1.* RESET (active low), *2.* Interrupt (Input to microcontroller)        
-- Strange SPI type (without CS pin), Hence you will find *Variable Length Data mode* VDM and *Fixed Length Data mode* FDM in the datasheet of W5500, However we will use *VDM*         
-- MSB first    
+- In addition to SPI lines (MOSI, MISO, SCK), We need two additional IO lines, **1.** RESET (active low), **2.** Interrupt (Input to microcontroller)        
+- Strange SPI type (without CS pin), Hence you will find **Variable Length Data mode** VDM and **Fixed Length Data mode** FDM in the datasheet of W5500, However we will use *VDM*         
+- MSB first      
+- Get the latest [I/O drivers](https://github.com/Wiznet/ioLibrary_Driver/tree/master) in **Ethernet** directory and choosing **W5500**
      
 		 
 		 
@@ -80,16 +81,25 @@ If the two bits are 0s as highlighted then you have selected the VDM, otherwise 
     
 | W5500  | STM32F407  |
 |:-------------|:-------------|
-| 5v   | Not connected  |
+| 5v   | **Not connected**  |
 | 3.3v           | 3.3v         |
 | GND | GND         |
-| MISO | PB14 (SPI2_MISO)         |
-| RST          | PA5         |
+| MISO | PC2 (SPI2_MISO)         |
+| RST          | PC4 GPIO_Output        |
 | MOSI          | PB15 (SPI2_MOSI)          |
-| INT           | Not connected    |
-| SCS (Chip select)           | PB12 (SPI2_NSS)    |        
-| NC           | Not connected    |     
-| SCLK           | PB13 (SCK)    |  
+| INT           | **Not connected**    |
+| SCS (Chip select)           | PA1 GPIO_Output     |        
+| NC           | **Not connected**    |     
+| SCLK           | PB13 (SCK)    |         
+       
+## USART 2 for debugging        
+
+| FTDI (USB to TTL converter)  | STM32F407  |
+|:-------------|:-------------|    
+| 3.3v   | **Not connected**  |
+| GND   | GND  |
+| Tx           | PA3 USART2_Rx         |
+| Rx | PA2 USART2_Tx         |     
 
 
 
