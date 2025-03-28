@@ -32,7 +32,16 @@
 | Over Sampling         | 16 Samples          |    
 
 
-
+## Things Added     
+- Get the latest [I/O drivers](https://github.com/Wiznet/ioLibrary_Driver/tree/master) in **Ethernet** directory (use `socket.c/h` and `wizchip_conf.c/h` into the project in `Inc`, `Src` folder) and choose **W5500** (contain `w5500.c/h` into the project in `Inc`, `Src` folder)    
+- SPI and GPIO initialization code (already done in CubeMX)   
+- A function to send a byte through SPI   
+- A function to send a number of bytes (array) through SPI in one go.    
+- A function to receive a byte through SPI    
+- A function to receive a number of bytes (array) trough SPI in one go     
+- A function to control the CS IO pin   
+- An over-all (full initialisation) function     
+- User created files `w5500_spi.c/h` to add our code and glue with `w5500` _I/O lib_
 
 
 
