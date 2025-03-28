@@ -72,7 +72,24 @@ If the two bits are 0s as highlighted then you have selected the VDM, otherwise 
 - Berkeley Software Distribution OS    
 - Its an UNIX Operating System   
 - Socket API of BSD Unix is called BSD Socket API  
-- W5500 driver on their official website is BSD complaint.       
+- W5500 driver on their official website is BSD complaint.      
+     
+		 
+		 
+## Pin Connection   
+    
+| W5500  | STM32F407  |
+|:-------------|:-------------|
+| 5v   | Not connected  |
+| 3.3v           | 3.3v         |
+| GND | GND         |
+| MISO | PB14 (SPI2_MISO)         |
+| RST          | PA5         |
+| MOSI          | PB15 (SPI2_MOSI)          |
+| INT           | Not connected    |
+| SCS (Chip select)           | PB12 (SPI2_NSS)    |        
+| NC           | Not connected    |     
+| SCLK           | PB13 (SCK)    |  
 
 
 
