@@ -1,4 +1,4 @@
-<ins>Create</ins> CubeMX project `00-w5500`     
+<ins>Create</ins> CubeMX project `01-w5500-basic-tcp-client`     
       
 <ins>In CubeMx project select:</ins>     
 - **Clock Configuration** tab select **HCLK** as _48MHz_ (which comes from **HSI** and **PLLCLK**)        
