@@ -68,4 +68,13 @@ int main()
 - A LAN cable to connect our W5500 to this network.  
 - The Embedded Host, that is our STM32+W5500     
 
-      		    		 
+### Disable the buffering of STDOUT    
+As `stdout` is buffered to the memory first and the output is not immediately transfered to the device (USART). we will disable it as follows  
+```c
+#include <stdio.h>
+
+int main(void)
+{
+	setbuf(stdout, NULL);
+}
+```     		    		 
