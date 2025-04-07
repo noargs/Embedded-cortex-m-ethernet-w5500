@@ -19,7 +19,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
-
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
@@ -42,6 +41,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 SPI_HandleTypeDef hspi2;
+
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
@@ -59,7 +59,14 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+wiz_NetInfo wiz_netinfo = {
+	.mac 	= {0x00, 0x08, 0xdc, 0xab, 0xcd, 0xef},
+	.ip 	= {192, 168, 1, 112},
+	.sn		= {255, 255, 255, 0},
+	.gw		= {192, 168, 1, 1},
+	.dns	= {8, 8, 8, 8},
+	.dhcp	= {NETINFO_STATIC}
+};
 /* USER CODE END 0 */
 
 /**
@@ -90,13 +97,12 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
-
   MX_GPIO_Init();
   MX_SPI2_Init();
   MX_USART2_UART_Init();
-
   /* USER CODE BEGIN 2 */
   W5500_Init();
+  ctlnetwork(CN_SET_NETINFO, (void*)&wiz_netinfo);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -135,7 +141,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.PLL.PLLM = 8;
   RCC_OscInitStruct.PLL.PLLN = 96;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 7;
+  RCC_OscInitStruct.PLL.PLLQ = 4;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -254,12 +260,6 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(OTG_FS_PowerSwitchOn_GPIO_Port, OTG_FS_PowerSwitchOn_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_4, GPIO_PIN_RESET);
-
-  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
                           |Audio_RST_Pin, GPIO_PIN_RESET);
 
@@ -270,12 +270,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CS_I2C_SPI_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin PC4 */
-  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|GPIO_PIN_4;
+  /*Configure GPIO pin : OTG_FS_PowerSwitchOn_Pin */
+  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(OTG_FS_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PDM_OUT_Pin */
   GPIO_InitStruct.Pin = PDM_OUT_Pin;
@@ -287,16 +287,9 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PA1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_1;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : I2S3_WS_Pin */
   GPIO_InitStruct.Pin = I2S3_WS_Pin;
@@ -368,7 +361,7 @@ static void MX_GPIO_Init(void)
   /*Configure GPIO pins : Audio_SCL_Pin Audio_SDA_Pin */
   GPIO_InitStruct.Pin = Audio_SCL_Pin|Audio_SDA_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   GPIO_InitStruct.Alternate = GPIO_AF4_I2C1;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

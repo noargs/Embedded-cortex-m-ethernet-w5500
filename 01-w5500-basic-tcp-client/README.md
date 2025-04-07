@@ -32,35 +32,40 @@
 | Over Sampling         | 16 Samples          |    
 
 
-## Things Added     
-- Get the latest [I/O drivers](https://github.com/Wiznet/ioLibrary_Driver/tree/master) in **Ethernet** directory (use `socket.c/h` and `wizchip_conf.c/h` into the project in `Inc`, `Src` folder) and choose **W5500** (contain `w5500.c/h` into the project in `Inc`, `Src` folder)    
-- SPI and GPIO initialization code (already done in CubeMX)   
-- A function to send a byte through SPI   
-- A function to send a number of bytes (array) through SPI in one go.    
-- A function to receive a byte through SPI    
-- A function to receive a number of bytes (array) trough SPI in one go     
-- A function to control the CS IO pin   
-- An over-all (full initialisation) function     
-- User created files `w5500_spi.c/h` to add our code and glue with `w5500` _I/O lib_          
-      
-
-Supports 8 independent sockets simultaneously  *Datasheet Page 2*. Hence initialised 2D array in `w5500_spi.c` with 8 elements twice (For **Rx** and **Tx** Buffer with internal memory of *32Kbytes* for each buffer).     
+## Static Host configuration    
+- Before a host on IP network can participate in the data transfer, it must be configured.   
+- It needs some data about the network, to become a part of that network.   
+- And that data is as follows:   
+-- Its own address that is IP address (for local netwrork)  
+-- Subnet mask of the network (for local network)  
+-- IP address of the gateway in that network (for internet)  
+-- IP address of the domain name server that is DNS (for internet)    
+     
+<ins>How the Host gets all the above information</ins>. **Host configuration** can be done either by **Static** or **Dynamic** way.     
+We will demonstrate **Static** method as it is simple and easy to implement in code for now.     
 ```c
-  uint8_t memsize[2][8] = {
-	  {2, 2, 2, 2, 2, 2, 2, 2}, // Transmit buffer
-	  {2, 2, 2, 2, 2, 2, 2, 2}  // Receive buffer
-  };
-```     
-      
-### ctlwizchip(request_code, arg)     
+wiz_NetInfo wiz_netinfo = {
+	.mac 	= {0x00, 0x08, 0xdc, 0xab, 0xcd, 0xef},
+	.ip 	= {192, 168, 1, 112},
+	.sn		= {255, 255, 255, 0},
+	.gw		= {192, 168, 1, 1},
+	.dns	= {8, 8, 8, 8},
+	.dhcp	= {NETINFO_STATIC}
+}; 
 
-This function in Wizchip API have following roles.
-- Reset the chip   
-- Initialise the chip `ctlwizchip(CW_INIT_WIZCHIP, (void*) memsize)`   
-- Set and clear interrupt flags and enable bits    
-- Get status of interrup flags and enable bits    
-- Reset the PHY   
-- Configure the PHY   
-- Get Status of PHY link       
+int main()
+{
+  ...
+
+  ctlnetwork(CN_SET_NETINFO, (void*)&wiz_netinfo);
+
+  ...
+}
+```     
+     
+### Thing we will be needed    
+- Internet Router, it has several LAN ports, WAN port (Internet) and WiFi connectivity. It also performs the role of a *gateway*.    
+- A LAN cable to connect our W5500 to this network.  
+- The Embedded Host, that is our STM32+W5500     
 
       		    		 
