@@ -41,7 +41,27 @@
 - A function to receive a number of bytes (array) trough SPI in one go     
 - A function to control the CS IO pin   
 - An over-all (full initialisation) function     
-- User created files `w5500_spi.c/h` to add our code and glue with `w5500` _I/O lib_
+- User created files `w5500_spi.c/h` to add our code and glue with `w5500` _I/O lib_          
+      
+
+Supports 8 independent sockets simultaneously  *Datasheet Page 2*. Hence initialised 2D array in `w5500_spi.c` with 8 elements twice (For **Rx** and **Tx** Buffer with internal memory of *32Kbytes* for each buffer).     
+```c
+  uint8_t memsize[2][8] = {
+	  {2, 2, 2, 2, 2, 2, 2, 2}, // Transmit buffer
+	  {2, 2, 2, 2, 2, 2, 2, 2}  // Receive buffer
+  };
+```     
+      
+### ctlwizchip(request_code, arg)     
+
+This function in Wizchip API have following roles.
+- Reset the chip   
+- Initialise the chip `ctlwizchip(CW_INIT_WIZCHIP, (void*) memsize)`   
+- Set and clear interrupt flags and enable bits    
+- Get status of interrup flags and enable bits    
+- Reset the PHY   
+- Configure the PHY   
+- Get Status of PHY link       
 
 
 

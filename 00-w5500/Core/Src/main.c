@@ -18,6 +18,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "w5500_spi.h"
+#include "wizchip_conf.h"
+#include "socket.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -93,6 +96,7 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI2_Init();
   MX_USART2_UART_Init();
+  W5500_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

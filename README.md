@@ -24,9 +24,11 @@ Similar to driver update as shown above, we have to download and run [STSW-LINK0
 - It supports both 10MBps and 100MBps network speeds (Chip will auto-configure to the highest ethernet speed available)	     
 - It supports auto-negotiation (Half duplex or Full duplex depending on network support).     
 - It has built-in TCP/IP stack (You dont need to run [lwIP](https://savannah.nongnu.org/projects/lwip/) on your microcontroller)     
-- It is interfaced to microcontroller using SPI interface	    
+- It is interfaced with microcontroller using SPI interface	    
 
-<img src="images/w5500_module_with_wiznet_chip.png" alt="W5500 module with wiznet chip" title="W5500 module with wiznet chip">   
+<img src="images/w5500_module_with_wiznet_chip.png" alt="W5500 module with wiznet chip" title="W5500 module with wiznet chip">     
+
+Find the [datasheet](./docs/W5500_ds_v110e.pdf)      
      
 		 
 		 
