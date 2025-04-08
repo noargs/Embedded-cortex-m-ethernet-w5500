@@ -77,4 +77,10 @@ int main(void)
 {
 	setbuf(stdout, NULL);
 }
-```     		    		 
+```
+
+> Allot the Static IP to W5500 in `wiz_netinfo` struct (in `main.c`) by making sure not already alloted by the Router to other device. IPs over xxx.xxx.xxx.100 are generally safe to use. Gateway IP can be obtained on the window by running `ipconfig` in the terminal (Not usedful for local TCP application). 
+
+> Destination IP `dest_ip[]` (in `main.c`) is your PC IP which can be obtained by running `ipconfig` in the terminal.
+
+> TCP Port `5000` is used which has to be opened from Windows Firewall by going to **Control Panel** > **Windows Defender Firewall** > **Advanced settings** clicking on the left tray on **Inbound Rules** and click on right tray on **New Rule** Selecting **Port** and click <ins>Next</ins>. Select **TCP** and enter 5000 in **Specific local ports** text field, click <ins>Next</ins>. Now, Pick **Allow the connection** click <ins>Next</ins>. Next, pick all three check boxes **Domain**, **Private** and **Public** and click <ins>Next</ins>. Finally give the name (i.e. `Open Port W5500`) to this port so you can identify/search later and click <ins>**Finish**</ins>.
