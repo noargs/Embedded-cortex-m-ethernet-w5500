@@ -1,24 +1,37 @@
 #include <stdio.h>
 #include "main.h"
 
+#include "w5500_spi.h"
+#include "wizchip_conf.h"
+#include "socket.h"
+
+#define SOCK_FD        1
+
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_USART2_UART_Init(void);
 static void u2_writebyte(const char data);
+static void PHY_StatusCheck(void);
+static void PHY_ConfPrint(void);
+static void PHY_ConfSW(void);   // configure PHY by software
 
 SPI_HandleTypeDef hspi2;
 UART_HandleTypeDef huart2;
 
 // 80 34 28 74 a5 cb
 wiz_NetInfo wiz_netinfo = {
-	.mac 	= {0x00, 0x08, 0xdc, 0xab, 0xcd, 0xef},
+	.mac 	= {0x80, 0x34, 0x28, 0x74, 0xA5, 0xCB}, // MSB - LSB
 	.ip 	= {192, 168, 1, 112},
 	.sn		= {255, 255, 255, 0},
-	.gw		= {192, 168, 1, 1},
+	.gw		= {192, 168, 1, 254},
 	.dns	= {8, 8, 8, 8},
-	.dhcp	= {NETINFO_STATIC}
+	.dhcp	= NETINFO_STATIC
 };
+
+// IP of our PC running server application
+uint8_t dest_ip[] = {192, 168, 1, 25};
+uint16_t dest_port = 5000;
 
 int main(void)
 {
@@ -29,18 +42,60 @@ int main(void)
   MX_GPIO_Init();
   MX_SPI2_Init();
   MX_USART2_UART_Init();
-  W5500_Init();
 
+  printf("A Simple TCP Client Application using W5500!\r\n");
+
+  W5500_Init();
   ctlnetwork(CN_SET_NETINFO, (void*)&wiz_netinfo);
+
+//  PHY_ConfSW();
+  PHY_StatusCheck();
+  PHY_ConfPrint();
+
+  /// socket 0 has some bug hence socket 1 is used
+  /// third parameter is 0 for client
+  /// return value of `socket()` is the socket number
+  /// we are trying to connect to
+  if (socket(SOCK_FD, Sn_MR_TCP, 0, 0) == SOCK_FD)
+  {
+	printf("\r\nSocket[%d] created successfully", socket(SOCK_FD, Sn_MR_TCP, 0, 0));
+  }
+  else
+  {
+	printf("\r\nCannot create the socket");
+	while(1);
+  }
+
+  printf("\r\n Connecting to server: %d.%d.%d.%d @ TCP Port: %d",
+		  dest_ip[0], dest_ip[1], dest_ip[2], dest_ip[3], dest_port);
+
+  if (connect(SOCK_FD, dest_ip, dest_port) == SOCK_OK)
+  {
+	printf("\r\nConnected with server");
+  }
+  else
+  {
+	printf("\r\nCannot connect with server %d", connect(SOCK_FD, dest_ip, dest_port));
+	while(1);
+  }
 
   while (1)
   {
-	for (int i=0; i<100; ++i)
+	// Return value of `send()` is the amount of data sent
+	if (send(SOCK_FD, ">[85:Noargs] Hello from main.c STM32f407\r\n", 44) <= SOCK_ERROR)
 	{
-	  printf("Hello, World! %d\r\n", i);
-	  HAL_Delay(1000);
+	  printf("\r\nSending failed");
+	  while(1);
 	}
+	else
+	{
+	  printf("\r\nSending success");
+	}
+	HAL_Delay(1000);
   }
+
+
+//  TEST_DEBUG_USART();
 }
 
 static void u2_writebyte(const char data)
@@ -53,6 +108,62 @@ int __io_putchar(int ch)
 {
   u2_writebyte(ch);
   return ch;
+}
+
+static void PHY_StatusCheck(void)
+{
+  uint8_t temp;
+
+  printf("\r\nChecking cable connection...");
+
+  do
+  {
+	ctlwizchip(CW_GET_PHYLINK, (void*)&temp);
+	if (temp == PHY_LINK_OFF)
+	{
+	  printf("\n\rNo cable connected");
+	  HAL_Delay(1500);
+	}
+  } while (temp == PHY_LINK_OFF);
+
+  printf("\n\rCable got connected!");
+}
+
+static void PHY_ConfPrint(void)
+{
+  wiz_PhyConf phy_conf;
+  ctlwizchip(CW_GET_PHYCONF, (void*)&phy_conf);
+
+  if (phy_conf.by == PHY_CONFBY_HW)
+	printf("\n\rPHY Configured by Hardware pins");
+  else
+	printf("\n\rPHY Configured by registers");
+
+  if (phy_conf.mode == PHY_MODE_AUTONEGO)
+	printf("\n\rAuto-negotiation enabled");
+  else
+	printf("\n\rAuto-negotiation not enabled");
+
+  if (phy_conf.duplex == PHY_DUPLEX_FULL)
+	printf("\n\rDuplex mode: Full");
+  else
+	printf("\n\rDuplex mode: Half");
+
+  if (phy_conf.speed == PHY_SPEED_10)
+	printf("\n\rSpeed: 10Mbs");
+  else
+	printf("\n\rSpeed: 100Mbs");
+}
+
+static void PHY_ConfSW(void)
+{
+  wiz_PhyConf phy_conf;
+  phy_conf.by 		= PHY_CONFBY_SW;
+  phy_conf.duplex 	= PHY_DUPLEX_FULL;
+  phy_conf.speed	= PHY_SPEED_10;
+  phy_conf.mode		= PHY_MODE_AUTONEGO; // best to go with auto-negotiation
+
+  ctlwizchip(CW_SET_PHYCONF, (void*)&phy_conf);
 }
 
 void SystemClock_Config(void)
@@ -108,6 +219,7 @@ static void MX_SPI2_Init(void)
   {
     Error_Handler();
   }
+  __HAL_SPI_ENABLE(&hspi2);
 }
 
 static void MX_USART2_UART_Init(void)
@@ -124,6 +236,7 @@ static void MX_USART2_UART_Init(void)
   {
     Error_Handler();
   }
+  __HAL_UART_ENABLE(&huart2);
 }
 
 static void MX_GPIO_Init(void)

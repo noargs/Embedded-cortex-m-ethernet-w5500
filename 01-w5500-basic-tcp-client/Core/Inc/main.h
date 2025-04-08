@@ -31,9 +31,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "w5500_spi.h"
-#include "wizchip_conf.h"
-#include "socket.h"
+
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -48,6 +46,16 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
+
+#define TEST_DEBUG_USART() 					\
+	  while (1)								\
+	  {										\
+		for (int i=0; i<100; ++i)			\
+		{									\
+		  printf("Hello, World! %d\r\n", i);\
+		  HAL_Delay(1000);					\
+		}									\
+	  }
 
 /* USER CODE END EM */
 
