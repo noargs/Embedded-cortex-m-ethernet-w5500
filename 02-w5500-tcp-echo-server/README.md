@@ -1,7 +1,7 @@
-<ins>Create</ins> CubeMX project `01-w5500-basic-tcp-client`        
+<ins>Create</ins> CubeMX project `02-w5500-tcp-echo-server`        
 
-- Our PC is TCP Server (TCP Server is created by [Herculas](https://www.hw-group.com/software/hercules-setup-utility))
-- STM32+W5500 is client
+- Our PC is TCP Client (TCP Client is created by [Herculas](https://www.hw-group.com/software/hercules-setup-utility))
+- STM32+W5500 as TCP Server
       
 <ins>In CubeMx project select:</ins>     
 - **Clock Configuration** tab select **HCLK** as _48MHz_ (which comes from **HSI** and **PLLCLK**)        
@@ -35,52 +35,13 @@
 | Over Sampling         | 16 Samples          |    
 
 
-## Static Host configuration    
-- Before a device (i.e. W5500) on IP network can participate in the data transfer, it must be configured.   
-- It needs some data about the network, to become a part of that network.   
-- And that data is as follows:   
--- Its own address that is IP address (for local netwrork)  
--- Subnet mask of the network (for local network)  
--- IP address of the gateway in that network (for internet)  
--- IP address of the domain name server that is DNS (for internet)    
-     
-<ins>How the Device gets all the above information</ins>. **Host configuration** can be done either by **Static** or **Dynamic** way.     
-We will demonstrate **Static** method as it is simple and easy to implement in code for now.     
-```c
-wiz_NetInfo wiz_netinfo = {
-	.mac 	= {0x00, 0x08, 0xdc, 0xab, 0xcd, 0xef},
-	.ip 	= {192, 168, 1, 112},
-	.sn		= {255, 255, 255, 0},
-	.gw		= {192, 168, 1, 1},
-	.dns	= {8, 8, 8, 8},
-	.dhcp	= {NETINFO_STATIC}
-}; 
+## A TCP ECHO Server     
 
-int main()
-{
-  ...
+- An ECHO server (STM32+W5500) waits for a client (i.e. our PC running TCP client with Hercules) to connect.    
+- When a client is connected. It waits for some data from the client.     
+- Server (STM32+W5500) will receive those data and then send it back to the client.    
+- Client will be able to observe that ECHO is coming from the server		    
 
-  ctlnetwork(CN_SET_NETINFO, (void*)&wiz_netinfo);
-
-  ...
-}
-```     
-     
-### Thing we need    
-- Internet Router, it has several LAN ports, WAN port (Internet) and WiFi connectivity. It also performs the role of a *gateway*.    
-- A LAN cable to connect our W5500 to this network.  
-- The Embedded Host, that is our STM32+W5500     
-
-### Disable the buffering of STDOUT    
-As `stdout` is buffered to the memory first and the output is not immediately transfered to the device (USART). we will disable it as follows  
-```c
-#include <stdio.h>
-
-int main(void)
-{
-	setbuf(stdout, NULL);
-}
-```
 
 > Allot the Static IP to W5500 in `wiz_netinfo` struct (in `main.c`) by making sure not already alloted by the Router to other device. IPs over xxx.xxx.xxx.100 are generally safe to use. Gateway IP can be obtained on the window by running `ipconfig` in the terminal (Not usefull for local TCP application). 
 
