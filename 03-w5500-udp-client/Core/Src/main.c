@@ -1,30 +1,55 @@
+/* USER CODE BEGIN Header */
 #include <stdio.h>
 #include <string.h>
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
 #include "w5500_spi.h"
 #include "wizchip_conf.h"
 #include "socket.h"
+/* USER CODE END Includes */
 
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+#define SERVER_PORT		5000
 #define SOCK_FD			1
-#define LISTEN_PORT		5000
-#define RECV_BUFF_SIZE	128
-#define USER_CONNECTED	0x17
+/* USER CODE END PD */
 
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+SPI_HandleTypeDef hspi2;
+UART_HandleTypeDef huart2;
+
+/* USER CODE BEGIN PV */
+uint8_t server_ip[4] = {192, 168, 1, 25};
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_SPI2_Init(void);
 static void MX_USART2_UART_Init(void);
+/* USER CODE BEGIN PFP */
 static void u2_writebyte(const char data);
 static void PHY_StatusCheck(void);
 static void PHY_ConfPrint(void);
 static void PHY_ConfSW(void);   // configure PHY by software
+/* USER CODE END PFP */
 
-SPI_HandleTypeDef hspi2;
-UART_HandleTypeDef huart2;
-
-uint8_t recv_buff[RECV_BUFF_SIZE];
-
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 // 80 34 28 74 a5 cb
 wiz_NetInfo wiz_netinfo = {
 	.mac 	= {0x80, 0x34, 0x28, 0x74, 0xA5, 0xCB}, // MSB - LSB
@@ -34,191 +59,92 @@ wiz_NetInfo wiz_netinfo = {
 	.dns	= {8, 8, 8, 8},
 	.dhcp	= NETINFO_STATIC
 };
+/* USER CODE END 0 */
 
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
 int main(void)
 {
+
+  /* USER CODE BEGIN 1 */
+  int32_t result; // to store result(return values) of socket functions
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
+
+  /* USER CODE BEGIN Init */
   setbuf(stdout, NULL);
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
   SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI2_Init();
   MX_USART2_UART_Init();
 
+  /* USER CODE BEGIN 2 */
 
-  printf("A Simple TCP Client Application using W5500!\r\n");
+  W5500_Init();
+  ctlnetwork(CN_SET_NETINFO, (void*)&wiz_netinfo);
+  PHY_ConfSW();
+  PHY_StatusCheck();
+  PHY_ConfPrint();
 
-   W5500_Init();
-   ctlnetwork(CN_SET_NETINFO, (void*)&wiz_netinfo);
+  printf("A simple UDP client exmaple with wiznet library\r\n");
+  printf("-----------------------------------------------\r\n");
 
-   /// Configure PHY by software for maximum compatibility
-   /// as user can use any model of W55xx board otherwise
-   /// the Pins on the board configure it, which may lead
-   /// to different configurations in different board
-   PHY_ConfSW();
-   PHY_StatusCheck();
-   PHY_ConfPrint();
-
-   printf("\r\n***************** SIMPLE TCP ECHO SERVER *****************\r\n");
-
-   while (1)
-   {
-	 printf("\r\nInitialising server socket\r\n");
-
-	 /// socket 0 has some bug hence socket 1 is used
-	 /// third parameter is 0 for client or port number for server
-	 /// return value of `socket()` is the socket number
-	 /// we are trying to connect to
-	 if (socket(SOCK_FD, Sn_MR_TCP, LISTEN_PORT, 0) != SOCK_FD)
-	 {
-	  printf("\r\nCannot create socket[%d]\r\n", socket(SOCK_FD, Sn_MR_TCP, 0, 0));
-	  while (1);
-	 }
-
-	 printf("Socket created!\r\n");
-
-	 uint8_t socket_io_mode = SOCK_IO_BLOCK;
-
-	 ctlsocket(SOCK_FD, CS_SET_IOMODE, &socket_io_mode);
-
-	 printf("Start listening on port [%d]\r\n", LISTEN_PORT);
-	 printf("Waiting for a client connection.\r\n");
-
-	 // Make it a passive socket (i.e. listen for connection)
-
-	 if (listen(SOCK_FD) != SOCK_OK)
-	 {
-	   printf("Cannot listen on port [%d]", LISTEN_PORT);
-	   while (1);
-	 }
-
-	 uint8_t socket_reg = 0x00;
-
-	 do
-	 {
-	   socket_reg = getSn_SR(SOCK_FD);
-	 } while ( socket_reg != USER_CONNECTED && socket_reg != SOCK_ERROR);
-
-	 if (socket_reg == SOCK_ERROR)
-	 {
-	   printf("Some error occurred on server socket. Please restart the system.\r\n");
-	   while (1);
-	 }
-
-	 if (socket_reg == USER_CONNECTED)
-	 {
-	   printf("A client has been connected\r\n");
-	   printf("Waiting for client data...\r\n");
-
-	   while (1)
-	   {
-		 /// `recv()` is blocking until receive some data
-		 int len = recv(SOCK_FD, recv_buff, RECV_BUFF_SIZE);
-
-		 if (len == SOCKERR_SOCKSTATUS)
-		 {
-		   printf("Client has been disconnected\r\n");
-		   printf("*** SESSION OVER ***\r\n\r\n");
-		   break;
-		 }
-
-		 recv_buff[len] = '\0';
-
-		 printf("Received %d bytes from client\r\n", len);
-		 printf("Data received: %s", recv_buff);
-
-		 // Echo the data back enclosed in a [] pair
-		 send(SOCK_FD, (uint8_t*)"[", 1);
-		 send(SOCK_FD, recv_buff, len);
-		 send(SOCK_FD, (uint8_t*)"]", 1);
-
-		 printf("\r\nECHO send back to the client\r\n");
-
-		 if (strcmp((char*)recv_buff, "QUIT") == 0)
-		 {
-		   printf("Received QUIT command from client\r\n");
-		   printf("Disconnecting...\r\n");
-		   printf("*** SESSION OVER ***\r\n\r\n");
-		   disconnect(SOCK_FD);
-		   break;
-		 }
-	   }
-	 }
-
-   }
-
-
-   TEST_DEBUG_USART();
-
-}
-
-static void u2_writebyte(const char data)
-{
-  while(__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TXE) == RESET);
-  huart2.Instance->DR = data;
-}
-
-int __io_putchar(int ch)
-{
-  u2_writebyte(ch);
-  return ch;
-}
-
-static void PHY_StatusCheck(void)
-{
-  uint8_t temp;
-
-  printf("\r\nChecking cable connection...");
-
-  do
+  if (socket(SOCK_FD, Sn_MR_UDP, 0, 0) != SOCK_FD)
   {
-	ctlwizchip(CW_GET_PHYLINK, (void*)&temp);
-	if (temp == PHY_LINK_OFF)
+	printf("Socket has been created \r\n");
+  }
+  else
+  {
+	printf("Unable to create a socket\r\n");
+	while (1);
+  }
+
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  TEST_DEBUG_USART();
+  while (1)
+  {
+	result = sendto(1, "[125:Noargs Sending data from STM32\r\n", 38, server_ip, SERVER_PORT);
+
+	if (result < 0)
 	{
-	  printf("\n\rNo cable connected");
-	  HAL_Delay(1500);
+	  printf("Unable to send the data\r\n");
 	}
-  } while (temp == PHY_LINK_OFF);
+	else
+	{
+	  printf("Data sent successfully\r\n");
+	  printf("Written %ld bytes to the socket.\r\n", result);
+	}
+	HAL_Delay(1000);
+    /* USER CODE END WHILE */
 
-  printf("\n\rCable got connected!");
+    /* USER CODE BEGIN 3 */
+  }
+  /* USER CODE END 3 */
 }
 
-static void PHY_ConfPrint(void)
-{
-  wiz_PhyConf phy_conf;
-  ctlwizchip(CW_GET_PHYCONF, (void*)&phy_conf);
-
-  if (phy_conf.by == PHY_CONFBY_HW)
-	printf("\n\rPHY Configured by Hardware pins");
-  else
-	printf("\n\rPHY Configured by registers");
-
-  if (phy_conf.mode == PHY_MODE_AUTONEGO)
-	printf("\n\rAuto-negotiation enabled");
-  else
-	printf("\n\rAuto-negotiation not enabled");
-
-  if (phy_conf.duplex == PHY_DUPLEX_FULL)
-	printf("\n\rDuplex mode: Full");
-  else
-	printf("\n\rDuplex mode: Half");
-
-  if (phy_conf.speed == PHY_SPEED_10)
-	printf("\n\rSpeed: 10Mbs");
-  else
-	printf("\n\rSpeed: 100Mbs");
-}
-
-static void PHY_ConfSW(void)
-{
-  wiz_PhyConf phy_conf;
-  phy_conf.by 		= PHY_CONFBY_SW;
-  phy_conf.duplex 	= PHY_DUPLEX_FULL;
-  phy_conf.speed	= PHY_SPEED_10;
-  phy_conf.mode		= PHY_MODE_AUTONEGO; // best to go with auto-negotiation
-
-  ctlwizchip(CW_SET_PHYCONF, (void*)&phy_conf);
-}
-
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
 void SystemClock_Config(void)
 {
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -306,6 +232,14 @@ static void MX_SPI2_Init(void)
   */
 static void MX_USART2_UART_Init(void)
 {
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
   huart2.Instance = USART2;
   huart2.Init.BaudRate = 115200;
   huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -324,6 +258,11 @@ static void MX_USART2_UART_Init(void)
 
 }
 
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
@@ -477,7 +416,73 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+static void u2_writebyte(const char data)
+{
+  while(__HAL_UART_GET_FLAG(&huart2, UART_FLAG_TXE) == RESET);
+  huart2.Instance->DR = data;
+}
 
+int __io_putchar(int ch)
+{
+  u2_writebyte(ch);
+  return ch;
+}
+
+static void PHY_StatusCheck(void)
+{
+  uint8_t temp;
+
+  printf("\r\nChecking cable connection...");
+
+  do
+  {
+	ctlwizchip(CW_GET_PHYLINK, (void*)&temp);
+	if (temp == PHY_LINK_OFF)
+	{
+	  printf("\n\rNo cable connected");
+	  HAL_Delay(1500);
+	}
+  } while (temp == PHY_LINK_OFF);
+
+  printf("\n\rCable got connected!");
+}
+
+static void PHY_ConfPrint(void)
+{
+  wiz_PhyConf phy_conf;
+  ctlwizchip(CW_GET_PHYCONF, (void*)&phy_conf);
+
+  if (phy_conf.by == PHY_CONFBY_HW)
+	printf("\n\rPHY Configured by Hardware pins");
+  else
+	printf("\n\rPHY Configured by registers");
+
+  if (phy_conf.mode == PHY_MODE_AUTONEGO)
+	printf("\n\rAuto-negotiation enabled");
+  else
+	printf("\n\rAuto-negotiation not enabled");
+
+  if (phy_conf.duplex == PHY_DUPLEX_FULL)
+	printf("\n\rDuplex mode: Full");
+  else
+	printf("\n\rDuplex mode: Half");
+
+  if (phy_conf.speed == PHY_SPEED_10)
+	printf("\n\rSpeed: 10Mbs");
+  else
+	printf("\n\rSpeed: 100Mbs");
+}
+
+static void PHY_ConfSW(void)
+{
+  wiz_PhyConf phy_conf;
+  phy_conf.by 		= PHY_CONFBY_SW;
+  phy_conf.duplex 	= PHY_DUPLEX_FULL;
+  phy_conf.speed	= PHY_SPEED_10;
+  phy_conf.mode		= PHY_MODE_AUTONEGO; // best to go with auto-negotiation
+
+  ctlwizchip(CW_SET_PHYCONF, (void*)&phy_conf);
+}
 /* USER CODE END 4 */
 
 /**
