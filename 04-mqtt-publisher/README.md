@@ -56,12 +56,30 @@ C:\Program Files\mosquitto> mosquitto -v -c myconfig.conf
      
 ### Integrate Wiznet W5500 Lib to CubeMX project   
 - Get the latest [I/O drivers](https://github.com/Wiznet/ioLibrary_Driver/tree/master) in **Ethernet** directory (use `socket.c/h` and `wizchip_conf.c/h` into the project in `Inc`, `Src` folder) and choose **W5500** (contain `w5500.c/h` into the project in `Inc`, `Src` folder).   
+- `mqtt_interface.c/h` from **Internet** > **MQTT** directory into your IDE
 - Also add headers to the Include path in the compiler by going to the **Properties** of the project and then **C/C++ Build** > **Settings** > **MCU/MPU GCC Compiler** > **Include Paths** as `../Core/Inc/w5500`        
       
 ### Integrate Eclipse Paho to CubeMX project     
 - Get the latest Eclipse Paho [code](https://github.com/eclipse-paho/paho.mqtt.embedded-c) from github.    
-- Move `MQTTClient.c/h` files from **MQTC** directory and `mqtt_interface.c/h` files from **MQTTPacket** directory, into the IDE.    
-- Also add headers to the Include path in the compiler by going to the **Properties** of the project and then **C/C++ Build** > **Settings** > **MCU/MPU GCC Compiler** > **Include Paths** as `../Core/Inc/mqttc`        
+- Move `MQTTClient.c/h` files from **MQTC** directory and all the files from **MQTTPacket** directory, into the IDE.    
+- Also add headers to the Include path in the compiler by going to the **Properties** of the project and then **C/C++ Build** > **Settings** > **MCU/MPU GCC Compiler** > **Include Paths** as `../Core/Inc/mqttc`   
+    
+
+### Eclipse Paho, MQTT Library    
+
+- Our Application code generally interact with **MQTTClient-C** which in turn interface with **MQTTPacket**.  
+- The library is a pure C code which is platform independent.    
+- It can be ported to any embedded device platform.   
+- Does not contain any network connection it contains only MQTT specific code.   
+- Hence, Its upto the user to provide it with the networking code that is available in their platform.   
+- For example, We are using W5500 for Ethernet connectivity. Hence we will provide networking code to Paho to access the network. we will call this code the *mqtt_interface* code.   
+- Apart from providing Networking (TCP/UDP) layer to MQTT Interface code. It also need Timer Service to keep track of the time (delays, timeout, keeping track of events i.e. sending keep alive packet).   
+- For more enhanced application we also need to provide it Multitasking interface (through RTOS). So our application code and MQTT code both can run on their own threads.    
+     
+### MQTT   
+- MQTT sits on the top of TCP/IP in the complete networking stack.   
+- *TCP/IP* layer helps *MQTT* communicates with the *Broker*. Which may be located very far away on the global internet.      
+
 
 
 > Allot the Static IP to W5500 in `wiz_netinfo` struct (in `main.c`) by making sure not already alloted by the Router to other device. IPs over xxx.xxx.xxx.100 are generally safe to use. Gateway IP can be obtained on the window by running `ipconfig` in the terminal (Not usefull for local TCP application). 
